@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Starlink Bundles — Instant Topups</title>
+<style>
+  :root{
+    --brand:#0a84ff; --accent:#06b6d4; --success:#0ea44a; --muted:#6b7280;
+    --card-bg:#fff; --page-bg:#f7f9fb;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--page-bg);color:#0f1724}
+  header{background:linear-gradient(90deg,var(--brand),#0066cc);color:#fff;padding:18px 16px;text-align:center;font-size:1.125rem;font-weight:700}
+  .wrap{max-width:980px;margin:14px auto;padding:12px}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:14px}
+  @media(max-width:820px){ .grid{grid-template-columns:1fr} }
+
+  .card{background:var(--card-bg);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(12,18,30,0.06)}
+  h2{margin:0 0 10px;color:var(--brand)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 8px;text-align:left;font-size:0.95rem}
+  th{font-weight:600;color:var(--muted);background:#fbfcfe}
+  tr:nth-child(even){background:#fbfbfd}
+  .order-btn{background:var(--brand);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+  .order-btn:active{transform:translateY(1px)}
+  .highlight{background:#fff7e6;color:#7a4b00;padding:4px 8px;border-radius:8px;font-weight:700;font-size:0.85rem}
+
+  /* payment panel */
+  .payment-panel{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+  #till{font-size:1.25rem;font-weight:800;color:var(--success);background:#f0fbf4;padding:12px;border-radius:10px;text-align:center}
+  .inline-row{display:flex;gap:8px;align-items:center}
+  .copy-btn{background:var(--brand);color:#fff;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .copy-btn:active{transform:translateY(1px)}
+  .copy-status{color:var(--success);font-weight:700;display:none;font-size:0.95rem}
+
+  .note{font-size:0.95rem;color:#374151}
+  .nb{font-size:0.92rem;color:#9b1d1d;font-weight:700}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:flex-end;justify-content:center;padding:12px;z-index:40}
+  @media(min-width:600px){ .modal-bg{align-items:center;padding:20px} }
+  .modal{width:100%;max-width:560px;background:#fff;border-radius:14px;padding:16px;box-shadow:0 12px 40px rgba(2,6,23,0.4)}
+  .modal h3{margin:0 0 8px}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:0.9rem;color:var(--muted);margin-bottom:6px}
+  .field input{width:100%;padding:10px;border-radius:10px;border:1px solid #eef2f7;font-size:1rem}
+  .modal-footer{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .primary{background:var(--brand);color:#fff;padding:10px 14px;border-radius:10px;border:none;font-weight:800;cursor:pointer}
+  .ghost{background:#f3f4f6;border:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+
+  /* floating pay button */
+  .float-pay{position:fixed;right:16px;bottom:16px;background:linear-gradient(90deg,var(--brand),#0066cc);color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(10,132,255,0.18);cursor:pointer;font-weight:800;z-index:30}
+  @media(min-width:900px){ .float-pay{display:none} }
+
+  /* order status (subtle, realistic) */
+  .status-block{margin-top:12px}
+  .status-processing{color:var(--muted);font-weight:600}
+  .status-success{display:none;color:var(--success);font-weight:700;padding:8px 10px;border-radius:8px;background:#f0fbf4}
+
+  /* small screens tweaks */
+  @media(max-width:420px){
+    header{font-size:1rem;padding:12px}
+    #till{font-size:1.05rem;padding:10px}
+    .order-btn{padding:8px 10px;font-size:0.95rem}
+  }
+
+  /* delays section */
+  .delays{margin:20px auto;text-align:center;font-size:0.95rem;color:#444}
+  .delays span{font-weight:700;color:#b91c1c}
+</style>
+</head>
+<body>
+<header>Starlink Bundles — Instant Topups</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- left: bundles -->
+    <div class="card">
+      <h2>Available Starlink Bundles</h2>
+      <table aria-label="Bundles table">
+        <thead>
+          <tr><th>Bundle</th><th>Validity</th><th>Price (KSh)</th><th></th></tr>
+        </thead>
+        <tbody id="bundles-tbody">
+          <!-- JS populates rows -->
+        </tbody>
+      </table>
+
+      <p class="note" style="margin-top:12px">All bundles are valid on any network (Safaricom, Airtel, Telkom, Faiba).</p>
+    </div>
+
+    <!-- right: payment & info -->
+    <aside class="card payment-panel" aria-labelledby="paymentTitle">
+      <h2 id="paymentTitle">Payment</h2>
+
+      <div id="till">M-Pesa Till: <span id="tillNum" style="font-size:1.35rem">6314588</span></div>
+
+      <div class="inline-row" style="justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <button class="copy-btn" id="copyTillBtn">Copy Till Number</button>
+          <span class="copy-status" id="copyStatus">Copied</span>
+        </div>
+      </div>
+
+      <p class="note" style="margin-top:10px">
+        Once payment is made, your bundle is triggered automatically — no extra steps needed.
+      </p>
+
+      <p class="nb">NB: Kindly pay using the line you want to receive data on.</p>
+
+      <div style="margin-top:8px">
+        <h3 style="margin:0 0 8px 0">How to order</h3>
+        <ol style="margin:0 0 8px 20px;color:#374151;padding:0">
+          <li>Tap an <strong>Order</strong> button on the left</li>
+          <li>Enter the phone number that should receive the bundle</li>
+          <li>Pay via M-Pesa Till and then tap <strong>I have paid</strong> in the popup</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <!-- delays section -->
+  <div class="delays">
+    In case of delays, please call <span>+254791289428</span>
+  </div>
+</div>
+
+<!-- Modal (order flow) -->
+<div class="modal-bg" id="modalBg" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal" role="document">
+    <button aria-label="Close" id="closeModal" style="float:right;background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+    <h3 id="modalTitle">Order</h3>
+    <div id="modalBundleInfo" style="margin-bottom:6px;color:var(--muted)"></div>
+
+    <div class="field">
+      <label for="phoneInput">Phone number to receive data</label>
+      <input id="phoneInput" inputmode="numeric" placeholder="07XXXXXXXX" maxlength="12" />
+    </div>
+
+    <div class="field">
+      <label>Amount (KSh)</label>
+      <input id="amountInput" disabled />
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <button class="primary" id="paidBtn">I have paid — trigger delivery</button>
+      <button class="ghost" id="copyModalTill">Copy Till</button>
+    </div>
+
+    <div id="orderStatusArea" class="status-block" style="display:none">
+      <div id="orderProcessing" class="status-processing">Processing your order…</div>
+      <div id="orderSuccess" class="status-success">Delivered — the bundle should appear on that line shortly.</div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+      <button class="ghost" id="cancelOrder">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- floating pay shortcut for mobile -->
+<button class="float-pay" id="floatPay">Pay Now — Copy Till</button>
+
+<script>
+/* ========== CONFIG ========== */
+const CONFIG = {
+  till: '6314588',
+  bundles: [
+    {id:'s1', label:'Starlink 1-day', validity:'1 day', price:65},
+    {id:'s3', label:'Starlink 3-days', validity:'3 days', price:150},
+    {id:'s7', label:'Starlink 7-days', validity:'7 days', price:300},
+    {id:'s30', label:'Starlink Monthly', validity:'30 days', price:800},
+    {id:'su', label:'Starlink Unlimited', validity:'30 days', price:1500}
+  ],
+  simulateDelay: 1400 // ms for simulated processing
+};
+
+/* ========== UI populate bundles ========== */
+const tbody = document.getElementById('bundles-tbody');
+CONFIG.bundles.forEach((b,i)=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${b.label}</td>
+    <td>${b.validity}</td>
+    <td><strong>KSh ${b.price}</strong></td>
+    <td><button class="order-btn" data-idx="${i}" aria-label="Order ${b.label}">Order</button></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+/* ========== Till UI wiring ========== */
+document.getElementById('tillNum').textContent = CONFIG.till;
+document.getElementById('copyTillBtn').addEventListener('click', ()=>copyText(CONFIG.till, document.getElementById('copyStatus')) );
+document.getElementById('floatPay').addEventListener('click', ()=>{ copyText(CONFIG.till, document.getElementById('copyStatus')); window.scrollTo({top:0,behavior:'smooth'}); });
+
+function copyText(text, statusEl){
+  navigator.clipboard?.writeText(text).then(()=> {
+    if(statusEl){ statusEl.style.display='inline'; setTimeout(()=> statusEl.style.display='none',2000); }
+  }).catch(()=> {
+    alert('Copy failed — long-press the till number on mobile to copy.');
+  });
+}
+
+/* ========== Modal & order flow ========== */
+const modalBg = document.getElementById('modalBg');
+const modalTitle = document.getElementById('modalTitle');
+const modalBundleInfo = document.getElementById('modalBundleInfo');
+const amountInput = document.getElementById('amountInput');
+const phoneInput = document.getElementById('phoneInput');
+const paidBtn = document.getElementById('paidBtn');
+const copyModalTill = document.getElementById('copyModalTill');
+const orderStatusArea = document.getElementById('orderStatusArea');
+const orderProcessing = document.getElementById('orderProcessing');
+const orderSuccess = document.getElementById('orderSuccess');
+
+let currentBundle = null;
+
+document.querySelectorAll('.order-btn').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    const idx = Number(e.currentTarget.dataset.idx);
+    openOrderModal(idx);
+  });
+});
+
+function openOrderModal(idx){
+  currentBundle = CONFIG.bundles[idx];
+  modalTitle.textContent = `Order — ${currentBundle.label}`;
+  modalBundleInfo.textContent = `${currentBundle.label} — KSh ${currentBundle.price} — Valid: ${currentBundle.validity}`;
+  amountInput.value = currentBundle.price;
+  phoneInput.value = '';
+  orderStatusArea.style.display='none';
+  orderProcessing.style.display='block';
+  orderSuccess.style.display='none';
+  modalBg.style.display = 'flex';
+  modalBg.setAttribute('aria-hidden','false');
+  phoneInput.focus();
+}
+
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('cancelOrder').addEventListener('click', closeModal);
+
+function closeModal(){ modalBg.style.display='none'; modalBg.setAttribute('aria-hidden','true'); }
+
+/* copy till from modal */
+copyModalTill.addEventListener('click', ()=>copyText(CONFIG.till, document.getElementById('copyStatus')) );
+
+/* Paid -> simulate verification + delivery */
+paidBtn.addEventListener('click', ()=>{
+  const phone = phoneInput.value.trim();
+  if(!phone || phone.length < 9){ alert('Please enter the line to receive data (e.g. 07XXXXXXXX).'); phoneInput.focus(); return; }
+
+  // show processing UI
+  orderStatusArea.style.display='block';
+  orderProcessing.style.display='block';
+  orderSuccess.style.display='none';
+  paidBtn.disabled = true;
+  paidBtn.textContent = 'Processing…';
+
+  // simulate a remote verification / trigger process
+  setTimeout(()=> {
+    orderProcessing.style.display='none';
+    orderSuccess.style.display='block';
+    paidBtn.disabled = false;
+    paidBtn.textContent = 'I have paid — trigger delivery';
+  }, CONFIG.simulateDelay);
+});
+
+/* keyboard escape closes modal */
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+/* initial small accessibility focus */
+document.addEventListener('DOMContentLoaded', ()=> {
+  if(window.innerWidth <= 820) document.getElementById('floatPay').style.display='block';
+});
+</script>
+</body>
+</html>
